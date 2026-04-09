@@ -49,6 +49,20 @@ DECISION_MARKERS = [
     r"\bset (it |this )?to\b",
     r"\bconfigure\b",
     r"\bdefault\b",
+    r"决定(用|改|走|做|把)?",
+    r"选择(了|用|走)?",
+    r"改用",
+    r"采用",
+    r"统一用",
+    r"最终用",
+    r"原因是",
+    r"因为",
+    r"方案",
+    r"架构",
+    r"策略",
+    r"而不是",
+    r"不如",
+    r"设为",
 ]
 
 PREFERENCE_MARKERS = [
@@ -68,6 +82,16 @@ PREFERENCE_MARKERS = [
     r"\btabs\b.*\bspaces\b",
     r"\bspaces\b.*\btabs\b",
     r"\buse\b.*\binstead of\b",
+    r"我更喜欢",
+    r"我倾向于",
+    r"我习惯",
+    r"最好",
+    r"尽量",
+    r"不要",
+    r"别用",
+    r"建议一直",
+    r"统一用",
+    r"偏好",
 ]
 
 MILESTONE_MARKERS = [
@@ -105,6 +129,20 @@ MILESTONE_MARKERS = [
     r"\bv\d+\.\d+",
     r"\d+x (compression|faster|slower|better|improvement|reduction)",
     r"\d+% (reduction|improvement|faster|better|smaller)",
+    r"终于",
+    r"搞定了?",
+    r"解决了?",
+    r"修好了?",
+    r"跑通了?",
+    r"成功了?",
+    r"实现了?",
+    r"完成了?",
+    r"上线了?",
+    r"发布了?",
+    r"第一次",
+    r"突破",
+    r"发现了?",
+    r"原来",
 ]
 
 PROBLEM_MARKERS = [
@@ -126,6 +164,20 @@ PROBLEM_MARKERS = [
     r"\bpatched\b",
     r"\bthe answer (is|was)\b",
     r"\b(had|need) to\b.*\binstead\b",
+    r"报错",
+    r"问题",
+    r"故障",
+    r"失败",
+    r"坏了",
+    r"崩了",
+    r"卡住了?",
+    r"不生效",
+    r"不工作",
+    r"没反应",
+    r"根因",
+    r"修复",
+    r"解决",
+    r"原因",
 ]
 
 EMOTION_MARKERS = [
@@ -158,6 +210,18 @@ EMOTION_MARKERS = [
     r"never told anyone",
     r"nobody knows",
     r"\*[^*]+\*",
+    r"我喜欢",
+    r"我爱",
+    r"害怕",
+    r"担心",
+    r"难过",
+    r"开心",
+    r"抱歉",
+    r"谢谢",
+    r"想你",
+    r"委屈",
+    r"孤独",
+    r"温柔",
 ]
 
 ALL_MARKERS = {
@@ -202,6 +266,17 @@ POSITIVE_WORDS = {
     "hug",
     "precious",
     "adore",
+    "开心",
+    "喜欢",
+    "高兴",
+    "成功",
+    "解决",
+    "修好",
+    "跑通",
+    "突破",
+    "温柔",
+    "感谢",
+    "谢谢",
 }
 
 NEGATIVE_WORDS = {
@@ -234,6 +309,16 @@ NEGATIVE_WORDS = {
     "panic",
     "disaster",
     "mess",
+    "报错",
+    "问题",
+    "失败",
+    "崩溃",
+    "坏了",
+    "卡住",
+    "担心",
+    "难过",
+    "害怕",
+    "孤独",
 }
 
 
@@ -242,6 +327,11 @@ def _get_sentiment(text: str) -> str:
     words = set(w.lower() for w in re.findall(r"\b\w+\b", text))
     pos = len(words & POSITIVE_WORDS)
     neg = len(words & NEGATIVE_WORDS)
+
+    # Chinese and mixed-script text often lacks word boundaries, so also count
+    # substring hits for non-ASCII marker terms.
+    pos += sum(1 for term in POSITIVE_WORDS if not term.isascii() and term in text)
+    neg += sum(1 for term in NEGATIVE_WORDS if not term.isascii() and term in text)
     if pos > neg:
         return "positive"
     elif neg > pos:
@@ -262,6 +352,12 @@ def _has_resolution(text: str) -> bool:
         r"\bnailed it\b",
         r"\bfigured (it )?out\b",
         r"\bthe (fix|answer|solution)\b",
+        r"修好了?",
+        r"解决了?",
+        r"搞定了?",
+        r"跑通了?",
+        r"恢复了?",
+        r"能用了?",
     ]
     return any(re.search(p, text_lower) for p in patterns)
 
@@ -435,6 +531,8 @@ def _split_into_segments(text: str) -> List[str]:
         re.compile(r"^>\s"),  # > quoted user turn
         re.compile(r"^(Human|User|Q)\s*:", re.I),  # Human: / User:
         re.compile(r"^(Assistant|AI|A|Claude|ChatGPT)\s*:", re.I),
+        re.compile(r"^(用户|人类|提问|问)\s*[：:]"),
+        re.compile(r"^(助手|助理|回复|答|系统)\s*[：:]"),
     ]
 
     turn_count = 0
