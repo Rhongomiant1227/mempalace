@@ -4,136 +4,61 @@
 
 # MemPalace
 
-### The highest-scoring AI memory system ever benchmarked. And it's free.
+### 面向中文内容与中文创作场景优化的本地 AI 记忆系统 Fork
 
-<br>
-
-Every conversation you have with an AI — every decision, every debugging session, every architecture debate — disappears when the session ends. Six months of work, gone. You start over every time.
-
-Other memory systems try to fix this by letting AI decide what's worth remembering. It extracts "user prefers Postgres" and throws away the conversation where you explained *why*. MemPalace takes a different approach: **store everything, then make it findable.**
-
-**The Palace** — Ancient Greek orators memorized entire speeches by placing ideas in rooms of an imaginary building. Walk through the building, find the idea. MemPalace applies the same principle to AI memory: your conversations are organized into wings (people and projects), halls (types of memory), and rooms (specific ideas). No AI decides what matters — you keep every word, and the structure gives you a navigable map instead of a flat search index.
-
-**Raw verbatim storage** — MemPalace stores your actual exchanges in ChromaDB without summarization or extraction. The 96.6% LongMemEval result comes from this raw mode. We don't burn an LLM to decide what's "worth remembering" — we keep everything and let semantic search find it.
-
-**AAAK (experimental)** — A lossy abbreviation dialect for packing repeated entities into fewer tokens at scale. Readable by any LLM that reads text — Claude, GPT, Gemini, Llama, Mistral — no decoder needed. **AAAK is a separate compression layer, not the storage default**, and on the LongMemEval benchmark it currently regresses vs raw mode (84.2% vs 96.6%). We're iterating. See the [note above](#a-note-from-milla--ben--april-7-2026) for the honest status.
-
-**Local, open, adaptable** — MemPalace runs entirely on your machine, on any data you have locally, without using any external API or services. It has been tested on conversations — but it can be adapted for different types of datastores. This is why we're open-sourcing it.
-
-<br>
-
-> [!IMPORTANT]
-> **This repository is a Chinese-optimized fork of MemPalace.**
->
-> It keeps the upstream architecture and raw-storage approach, while adding extra support for:
->
-> - Chinese text and mixed Chinese-English workflows
-> - Chinese creative-writing and long-novel projects
-> - Better room detection for folders such as `小说` / `设定` / `人物` / `剧情` / `章节`
-> - Better heuristic extraction for Chinese decisions, preferences, milestones, problems, and emotional context
->
-> This fork is **additive**, not a replacement-only rewrite:
->
-> - English support is still kept
-> - Existing English heuristics are not removed
-> - The goal is better Chinese retrieval and authoring support without breaking the original English workflow
->
-> If your main workload is Chinese writing, Chinese note archives, or Chinese-first local projects, this fork is the recommended starting point.
-
-[![][version-shield]][release-link]
-[![][python-shield]][python-link]
-[![][license-shield]][license-link]
-[![][discord-shield]][discord-link]
-
-<br>
-
-[Quick Start](#quick-start) · [The Palace](#the-palace) · [AAAK Dialect](#aaak-dialect-experimental) · [Benchmarks](#benchmarks) · [MCP Tools](#mcp-server)
-
-<br>
-
-### Highest LongMemEval score ever published — free or paid.
-
-<table>
-<tr>
-<td align="center"><strong>96.6%</strong><br><sub>LongMemEval R@5<br><b>raw mode</b>, zero API calls</sub></td>
-<td align="center"><strong>500/500</strong><br><sub>questions tested<br>independently reproduced</sub></td>
-<td align="center"><strong>$0</strong><br><sub>No subscription<br>No cloud. Local only.</sub></td>
-</tr>
-</table>
-
-<sub>Reproducible — runners in <a href="benchmarks/">benchmarks/</a>. <a href="benchmarks/BENCHMARKS.md">Full results</a>. The 96.6% is from <b>raw verbatim mode</b>, not AAAK or rooms mode (those score lower — see <a href="#a-note-from-milla--ben--april-7-2026">note above</a>).</sub>
+[**中文 README**](README.md) | [English README](README.en.md)
 
 </div>
 
 ---
 
-## A Note from Milla & Ben — April 7, 2026
-
-> The community caught real problems in this README within hours of launch and we want to address them directly.
+> [!IMPORTANT]
+> 这是一个 **对中文工作流做了专门优化的 MemPalace Fork**。
 >
-> **What we got wrong:**
+> 它保留了上游的核心架构和原始文本存储思路，同时额外增强了：
 >
-> - **The AAAK token example was incorrect.** We used a rough heuristic (`len(text)//3`) for token counts instead of an actual tokenizer. Real counts via OpenAI's tokenizer: the English example is 66 tokens, the AAAK example is 73. AAAK does not save tokens at small scales — it's designed for *repeated entities at scale*, and the README example was a bad demonstration of that. We're rewriting it.
+> - 中文文本与中英混合工作流
+> - 中文小说 / 世界观 / 角色 / 大纲 / 正文等创作目录识别
+> - 中文决策、偏好、里程碑、问题、情绪等记忆提取
+> - 更适合本地中文写作项目的启发式分类
 >
-> - **"30x lossless compression" was overstated.** AAAK is a lossy abbreviation system (entity codes, sentence truncation). Independent benchmarks show AAAK mode scores **84.2% R@5 vs raw mode's 96.6%** on LongMemEval — a 12.4 point regression. The honest framing is: AAAK is an experimental compression layer that trades fidelity for token density, and **the 96.6% headline number is from RAW mode, not AAAK**.
+> 这个 Fork 的原则是 **增量增强，不破坏英文能力**：
 >
-> - **"+34% palace boost" was misleading.** That number compares unfiltered search to wing+room metadata filtering. Metadata filtering is a standard ChromaDB feature, not a novel retrieval mechanism. Real and useful, but not a moat.
->
-> - **"Contradiction detection"** exists as a separate utility (`fact_checker.py`) but is not currently wired into the knowledge graph operations as the README implied.
->
-> - **"100% with Haiku rerank"** is real (we have the result files) but the rerank pipeline is not in the public benchmark scripts. We're adding it.
->
-> **What's still true and reproducible:**
->
-> - **96.6% R@5 on LongMemEval in raw mode**, on 500 questions, zero API calls — independently reproduced on M2 Ultra in under 5 minutes by [@gizmax](https://github.com/milla-jovovich/mempalace/issues/39).
-> - Local, free, no subscription, no cloud, no data leaving your machine.
-> - The architecture (wings, rooms, closets, drawers) is real and useful, even if it's not a magical retrieval boost.
->
-> **What we're doing:**
->
-> 1. Rewriting the AAAK example with real tokenizer counts and a scenario where AAAK actually demonstrates compression
-> 2. Adding `mode raw / aaak / rooms` clearly to the benchmark documentation so the trade-offs are visible
-> 3. Wiring `fact_checker.py` into the KG ops so the contradiction detection claim becomes true
-> 4. Pinning ChromaDB to a tested range (Issue #100), fixing the shell injection in hooks (#110), and addressing the macOS ARM64 segfault (#74)
->
-> **Thank you to everyone who poked holes in this.** Brutal honest criticism is exactly what makes open source work, and it's what we asked for. Special thanks to [@panuhorsmalahti](https://github.com/milla-jovovich/mempalace/issues/43), [@lhl](https://github.com/milla-jovovich/mempalace/issues/27), [@gizmax](https://github.com/milla-jovovich/mempalace/issues/39), and everyone who filed an issue or a PR in the first 48 hours. We're listening, we're fixing, and we'd rather be right than impressive.
->
-> — *Milla Jovovich & Ben Sigman*
+> - 英文支持仍然保留
+> - 原有英文启发式没有被删除
+> - 目标是提高中文检索与中文创作体验，而不是把项目改成“只支持中文”
 
----
+## 这是什么
 
-## Quick Start
+MemPalace 是一个本地运行的 AI 记忆系统。它不依赖云端服务，不需要把你的对话、项目、笔记上传出去，而是把原始内容存进本机的 ChromaDB，并通过一套“宫殿式”结构把它组织起来，让 AI 后续能够重新找到这些信息。
 
-```bash
-pip install mempalace
+和很多“先总结、再决定什么值得记住”的方案不同，MemPalace 的核心思路是：
 
-# Set up your world — who you work with, what your projects are
-mempalace init ~/projects/myapp
+- **尽量保留原文**
+- **不要过早丢弃上下文**
+- **在检索阶段解决“怎么找到”**
 
-# Mine your data
-mempalace mine ~/projects/myapp                    # projects — code, docs, notes
-mempalace mine ~/chats/ --mode convos              # convos — Claude, ChatGPT, Slack exports
-mempalace mine ~/chats/ --mode convos --extract general  # general — classifies into decisions, milestones, problems
+简单说，就是“先存，再找”，而不是“先压缩，再赌总结没丢东西”。
 
-# Search anything you've ever discussed
-mempalace search "why did we switch to GraphQL"
+## 这个 Fork 适合谁
 
-# Your AI remembers
-mempalace status
-```
+这个版本尤其适合以下场景：
 
-Three mining modes: **projects** (code and docs), **convos** (conversation exports), and **general** (auto-classifies into decisions, preferences, milestones, problems, and emotional context). Everything stays on your machine.
+- 中文聊天记录归档
+- 中文工程笔记、文档、会议记录
+- 中文小说写作项目
+- 世界观、角色、设定、大纲、章节、正文管理
+- 中英混合的本地知识库
 
-### Fork Note: Chinese-First Usage
+如果你的主要使用场景是中文写作、中文项目研发或者中文资料检索，这个 Fork 会比上游默认版本更合适。
 
-This fork is especially suitable for:
+## 这个 Fork 做了什么优化
 
-- Chinese chat archives
-- Chinese local knowledge bases
-- Chinese novel / worldbuilding / outline / manuscript folders
-- Mixed Chinese-English engineering notes
+目前已经补进去的中文增强主要包括：
 
-Out of the box, the fork includes extra room and extractor heuristics for creative-writing structures such as:
+### 1. 中文房间识别
+
+除了原来的英文目录识别，这个 Fork 现在还能更好地识别这类中文目录或主题：
 
 - `故事` / `小说`
 - `设定` / `世界观`
@@ -141,615 +66,311 @@ Out of the box, the fork includes extra room and extractor heuristics for creati
 - `剧情` / `大纲`
 - `正文` / `章节`
 - `记忆`
+- 以及常见中文工程目录，如 `前端` / `后端` / `文档` / `测试` / `配置`
 
-If your workload is primarily Chinese, this fork should behave better than the upstream default before any further customization.
+### 2. 中文记忆提取
 
----
+在 `general extractor` 里额外加入了中文启发式识别，用来提取：
 
-## How You Actually Use It
+- 决策
+- 偏好
+- 里程碑
+- 问题
+- 情绪内容
+- 已解决问题
 
-After the one-time setup (install → init → mine), you don't run MemPalace commands manually. Your AI uses it for you. There are two ways, depending on which AI you use.
+这意味着它对中文对话、中文创作讨论、中文项目记录的结构化提取会比原版更稳。
 
-### With Claude Code (recommended)
+### 3. 中文创作场景更友好
 
-Native marketplace install:
+对小说项目来说，很多信息不是“代码知识”，而是：
 
-```bash
-claude plugin marketplace add milla-jovovich/mempalace
-claude plugin install --scope user mempalace
-```
+- 角色设定
+- 关系变化
+- 世界观规则
+- 伏笔与回收点
+- 章节规划
+- 风格与写法约束
 
-Restart Claude Code, then type `/skills` to verify "mempalace" appears.
+这个 Fork 已经在目录识别和文本提取层面，朝这些场景做了适配。
 
-### With Claude, ChatGPT, Cursor, Gemini (MCP-compatible tools)
+## 核心特性
 
-```bash
-# Connect MemPalace once
-claude mcp add mempalace -- python -m mempalace.mcp_server
-```
+### 原文存储
 
-Now your AI has 19 tools available through MCP. Ask it anything:
+MemPalace 默认会把原始文本直接存储到 ChromaDB，而不是先做摘要再入库。这样做的好处是：
 
-> *"What did we decide about auth last month?"*
+- 保留原始语境
+- 保留“为什么”
+- 避免总结阶段丢掉关键细节
 
-Claude calls `mempalace_search` automatically, gets verbatim results, and answers you. You never type `mempalace search` again. The AI handles it.
+### 宫殿结构
 
-MemPalace also works natively with **Gemini CLI** (which handles the server and save hooks automatically) — see the [Gemini CLI Integration Guide](examples/gemini_cli_setup.md).
+MemPalace 用一套层级结构组织记忆：
 
-### With local models (Llama, Mistral, or any offline LLM)
+- **Wing**：一个项目、一个人、一个主题
+- **Room**：该 Wing 下的具体主题
+- **Hall**：跨主题的记忆类型
+- **Closet**：指向内容的摘要层
+- **Drawer**：原始文本内容
 
-Local models generally don't speak MCP yet. Two approaches:
+这套结构的价值不只是“看起来漂亮”，而是能把检索范围收窄，让 AI 更快、更准确地找到相关内容。
 
-**1. Wake-up command** — load your world into the model's context:
+### 本地运行
 
-```bash
-mempalace wake-up > context.txt
-# Paste context.txt into your local model's system prompt
-```
+- 无需外部 API
+- 数据不离开你的机器
+- 可自定义、可自托管、可离线组合本地模型
 
-This gives your local model ~170 tokens of critical facts (in AAAK if you prefer) before you ask a single question.
+### MCP 工具支持
 
-**2. CLI search** — query on demand, feed results into your prompt:
+MemPalace 提供 MCP Server，可以接进 Claude Code、ChatGPT 桌面端、Cursor、Gemini 等支持 MCP 的工具链。
 
-```bash
-mempalace search "auth decisions" > results.txt
-# Include results.txt in your prompt
-```
+### 知识图谱与时间有效性
 
-Or use the Python API:
+除了向量检索外，MemPalace 还提供本地知识图谱，用来表达：
 
-```python
-from mempalace.searcher import search_memories
-results = search_memories("auth decisions", palace_path="~/.mempalace/palace")
-# Inject into your local model's context
-```
+- 谁参与了什么
+- 某个事实从什么时候开始成立
+- 什么时候失效
+- 某个人或项目的时间线变化
 
-Either way — your entire memory stack runs offline. ChromaDB on your machine, Llama on your machine, AAAK for compression, zero cloud calls.
-
----
-
-## The Problem
-
-Decisions happen in conversations now. Not in docs. Not in Jira. In conversations with Claude, ChatGPT, Copilot. The reasoning, the tradeoffs, the "we tried X and it failed because Y" — all trapped in chat windows that evaporate when the session ends.
-
-**Six months of daily AI use = 19.5 million tokens.** That's every decision, every debugging session, every architecture debate. Gone.
-
-| Approach | Tokens loaded | Annual cost |
-|----------|--------------|-------------|
-| Paste everything | 19.5M — doesn't fit any context window | Impossible |
-| LLM summaries | ~650K | ~$507/yr |
-| **MemPalace wake-up** | **~170 tokens** | **~$0.70/yr** |
-| **MemPalace + 5 searches** | **~13,500 tokens** | **~$10/yr** |
-
-MemPalace loads 170 tokens of critical facts on wake-up — your team, your projects, your preferences. Then searches only when needed. $10/year to remember everything vs $507/year for summaries that lose context.
-
----
-
-## How It Works
-
-### The Palace
-
-The layout is fairly simple, though it took a long time to get there.
-
-It starts with a **wing**. Every project, person, or topic you're filing gets its own wing in the palace.
-
-Each wing has **rooms** connected to it, where information is divided into subjects that relate to that wing — so every room is a different element of what your project contains. Project ideas could be one room, employees could be another, financial statements another. There can be an endless number of rooms that split the wing into sections. The MemPalace install detects these for you automatically, and of course you can personalize it any way you feel is right.
-
-Every room has a **closet** connected to it, and here's where things get interesting. We've developed an AI language called **AAAK**. Don't ask — it's a whole story of its own. Your agent learns the AAAK shorthand every time it wakes up. Because AAAK is essentially English, but a very truncated version, your agent understands how to use it in seconds. It comes as part of the install, built into the MemPalace code. In our next update, we'll add AAAK directly to the closets, which will be a real game changer — the amount of info in the closets will be much bigger, but it will take up far less space and far less reading time for your agent.
-
-Inside those closets are **drawers**, and those drawers are where your original files live. In this first version, we haven't used AAAK as a closet tool, but even so, the summaries have shown **96.6% recall** in all the benchmarks we've done across multiple benchmarking platforms. Once the closets use AAAK, searches will be even faster while keeping every word exact. But even now, the closet approach has been a huge boon to how much info is stored in a small space — it's used to easily point your AI agent to the drawer where your original file lives. You never lose anything, and all this happens in seconds.
-
-There are also **halls**, which connect rooms within a wing, and **tunnels**, which connect rooms from different wings to one another. So finding things becomes truly effortless — we've given the AI a clean and organized way to know where to start searching, without having to look through every keyword in huge folders.
-
-You say what you're looking for and boom, it already knows which wing to go to. Just *that* in itself would have made a big difference. But this is beautiful, elegant, organic, and most importantly, efficient.
-
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │  WING: Person                                              │
-  │                                                            │
-  │    ┌──────────┐  ──hall──  ┌──────────┐                    │
-  │    │  Room A  │            │  Room B  │                    │
-  │    └────┬─────┘            └──────────┘                    │
-  │         │                                                  │
-  │         ▼                                                  │
-  │    ┌──────────┐      ┌──────────┐                          │
-  │    │  Closet  │ ───▶ │  Drawer  │                          │
-  │    └──────────┘      └──────────┘                          │
-  └─────────┼──────────────────────────────────────────────────┘
-            │
-          tunnel
-            │
-  ┌─────────┼──────────────────────────────────────────────────┐
-  │  WING: Project                                             │
-  │         │                                                  │
-  │    ┌────┴─────┐  ──hall──  ┌──────────┐                    │
-  │    │  Room A  │            │  Room C  │                    │
-  │    └────┬─────┘            └──────────┘                    │
-  │         │                                                  │
-  │         ▼                                                  │
-  │    ┌──────────┐      ┌──────────┐                          │
-  │    │  Closet  │ ───▶ │  Drawer  │                          │
-  │    └──────────┘      └──────────┘                          │
-  └─────────────────────────────────────────────────────────────┘
-```
-
-**Wings** — a person or project. As many as you need.
-**Rooms** — specific topics within a wing. Auth, billing, deploy — endless rooms.
-**Halls** — connections between related rooms *within* the same wing. If Room A (auth) and Room B (security) are related, a hall links them.
-**Tunnels** — connections *between* wings. When Person A and a Project both have a room about "auth," a tunnel cross-references them automatically.
-**Closets** — summaries that point to the original content. (In v3.0.0 these are plain-text summaries; AAAK-encoded closets are coming in a future update — see [Task #30](https://github.com/milla-jovovich/mempalace/issues/30).)
-**Drawers** — the original verbatim files. The exact words, never summarized.
-
-**Halls** are memory types — the same in every wing, acting as corridors:
-- `hall_facts` — decisions made, choices locked in
-- `hall_events` — sessions, milestones, debugging
-- `hall_discoveries` — breakthroughs, new insights
-- `hall_preferences` — habits, likes, opinions
-- `hall_advice` — recommendations and solutions
-
-**Rooms** are named ideas — `auth-migration`, `graphql-switch`, `ci-pipeline`. When the same room appears in different wings, it creates a **tunnel** — connecting the same topic across domains:
-
-```
-wing_kai       / hall_events / auth-migration  → "Kai debugged the OAuth token refresh"
-wing_driftwood / hall_facts  / auth-migration  → "team decided to migrate auth to Clerk"
-wing_priya     / hall_advice / auth-migration  → "Priya approved Clerk over Auth0"
-```
-
-Same room. Three wings. The tunnel connects them.
-
-### Why Structure Matters
-
-Tested on 22,000+ real conversation memories:
-
-```
-Search all closets:          60.9%  R@10
-Search within wing:          73.1%  (+12%)
-Search wing + hall:          84.8%  (+24%)
-Search wing + room:          94.8%  (+34%)
-```
-
-Wings and rooms aren't cosmetic. They're a **34% retrieval improvement**. The palace structure is the product.
-
-### The Memory Stack
-
-| Layer | What | Size | When |
-|-------|------|------|------|
-| **L0** | Identity — who is this AI? | ~50 tokens | Always loaded |
-| **L1** | Critical facts — team, projects, preferences | ~120 tokens (AAAK) | Always loaded |
-| **L2** | Room recall — recent sessions, current project | On demand | When topic comes up |
-| **L3** | Deep search — semantic query across all closets | On demand | When explicitly asked |
-
-Your AI wakes up with L0 + L1 (~170 tokens) and knows your world. Searches only fire when needed.
-
-### AAAK Dialect (experimental)
-
-AAAK is a lossy abbreviation system — entity codes, structural markers, and sentence truncation — designed to pack repeated entities and relationships into fewer tokens at scale. It is **readable by any LLM that reads text** (Claude, GPT, Gemini, Llama, Mistral) without a decoder, so a local model can use it without any cloud dependency.
-
-**Honest status (April 2026):**
-
-- **AAAK is lossy, not lossless.** It uses regex-based abbreviation, not reversible compression.
-- **It does not save tokens at small scales.** Short text already tokenizes efficiently. AAAK overhead (codes, separators) costs more than it saves on a few sentences.
-- **It can save tokens at scale** — in scenarios with many repeated entities (a team mentioned hundreds of times, the same project across thousands of sessions), the entity codes amortize.
-- **AAAK currently regresses LongMemEval** vs raw verbatim retrieval (84.2% R@5 vs 96.6%). The 96.6% headline number is from **raw mode**, not AAAK mode.
-- **The MemPalace storage default is raw verbatim text in ChromaDB** — that's where the benchmark wins come from. AAAK is a separate compression layer for context loading, not the storage format.
-
-We're iterating on the dialect spec, adding a real tokenizer for stats, and exploring better break points for when to use it. Track progress in [Issue #43](https://github.com/milla-jovovich/mempalace/issues/43) and [#27](https://github.com/milla-jovovich/mempalace/issues/27).
-
-### Contradiction Detection (experimental, not yet wired into KG)
-
-A separate utility (`fact_checker.py`) can check assertions against entity facts. It's not currently called automatically by the knowledge graph operations — this is being fixed (track in [Issue #27](https://github.com/milla-jovovich/mempalace/issues/27)). When enabled it catches things like:
-
-```
-Input:  "Soren finished the auth migration"
-Output: 🔴 AUTH-MIGRATION: attribution conflict — Maya was assigned, not Soren
-
-Input:  "Kai has been here 2 years"
-Output: 🟡 KAI: wrong_tenure — records show 3 years (started 2023-04)
-
-Input:  "The sprint ends Friday"
-Output: 🟡 SPRINT: stale_date — current sprint ends Thursday (updated 2 days ago)
-```
-
-Facts checked against the knowledge graph. Ages, dates, and tenures calculated dynamically — not hardcoded.
-
----
-
-## Real-World Examples
-
-### Solo developer across multiple projects
-
-```bash
-# Mine each project's conversations
-mempalace mine ~/chats/orion/  --mode convos --wing orion
-mempalace mine ~/chats/nova/   --mode convos --wing nova
-mempalace mine ~/chats/helios/ --mode convos --wing helios
-
-# Six months later: "why did I use Postgres here?"
-mempalace search "database decision" --wing orion
-# → "Chose Postgres over SQLite because Orion needs concurrent writes
-#    and the dataset will exceed 10GB. Decided 2025-11-03."
-
-# Cross-project search
-mempalace search "rate limiting approach"
-# → finds your approach in Orion AND Nova, shows the differences
-```
-
-### Team lead managing a product
-
-```bash
-# Mine Slack exports and AI conversations
-mempalace mine ~/exports/slack/ --mode convos --wing driftwood
-mempalace mine ~/.claude/projects/ --mode convos
-
-# "What did Soren work on last sprint?"
-mempalace search "Soren sprint" --wing driftwood
-# → 14 closets: OAuth refactor, dark mode, component library migration
-
-# "Who decided to use Clerk?"
-mempalace search "Clerk decision" --wing driftwood
-# → "Kai recommended Clerk over Auth0 — pricing + developer experience.
-#    Team agreed 2026-01-15. Maya handling the migration."
-```
-
-### Before mining: split mega-files
-
-Some transcript exports concatenate multiple sessions into one huge file:
-
-```bash
-mempalace split ~/chats/                      # split into per-session files
-mempalace split ~/chats/ --dry-run            # preview first
-mempalace split ~/chats/ --min-sessions 3     # only split files with 3+ sessions
-```
-
----
-
-## Knowledge Graph
-
-Temporal entity-relationship triples — like Zep's Graphiti, but SQLite instead of Neo4j. Local and free.
-
-```python
-from mempalace.knowledge_graph import KnowledgeGraph
-
-kg = KnowledgeGraph()
-kg.add_triple("Kai", "works_on", "Orion", valid_from="2025-06-01")
-kg.add_triple("Maya", "assigned_to", "auth-migration", valid_from="2026-01-15")
-kg.add_triple("Maya", "completed", "auth-migration", valid_from="2026-02-01")
-
-# What's Kai working on?
-kg.query_entity("Kai")
-# → [Kai → works_on → Orion (current), Kai → recommended → Clerk (2026-01)]
-
-# What was true in January?
-kg.query_entity("Maya", as_of="2026-01-20")
-# → [Maya → assigned_to → auth-migration (active)]
-
-# Timeline
-kg.timeline("Orion")
-# → chronological story of the project
-```
-
-Facts have validity windows. When something stops being true, invalidate it:
-
-```python
-kg.invalidate("Kai", "works_on", "Orion", ended="2026-03-01")
-```
-
-Now queries for Kai's current work won't return Orion. Historical queries still will.
-
-| Feature | MemPalace | Zep (Graphiti) |
-|---------|-----------|----------------|
-| Storage | SQLite (local) | Neo4j (cloud) |
-| Cost | Free | $25/mo+ |
-| Temporal validity | Yes | Yes |
-| Self-hosted | Always | Enterprise only |
-| Privacy | Everything local | SOC 2, HIPAA |
-
----
-
-## Specialist Agents
-
-Create agents that focus on specific areas. Each agent gets its own wing and diary in the palace — not in your CLAUDE.md. Add 50 agents, your config stays the same size.
-
-```
-~/.mempalace/agents/
-  ├── reviewer.json       # code quality, patterns, bugs
-  ├── architect.json      # design decisions, tradeoffs
-  └── ops.json            # deploys, incidents, infra
-```
-
-Your CLAUDE.md just needs one line:
-
-```
-You have MemPalace agents. Run mempalace_list_agents to see them.
-```
-
-The AI discovers its agents from the palace at runtime. Each agent:
-
-- **Has a focus** — what it pays attention to
-- **Keeps a diary** — written in AAAK, persists across sessions
-- **Builds expertise** — reads its own history to stay sharp in its domain
-
-```
-# Agent writes to its diary after a code review
-mempalace_diary_write("reviewer",
-    "PR#42|auth.bypass.found|missing.middleware.check|pattern:3rd.time.this.quarter|★★★★")
-
-# Agent reads back its history
-mempalace_diary_read("reviewer", last_n=10)
-# → last 10 findings, compressed in AAAK
-```
-
-Each agent is a specialist lens on your data. The reviewer remembers every bug pattern it's seen. The architect remembers every design decision. The ops agent remembers every incident. They don't share a scratchpad — they each maintain their own memory.
-
-Letta charges $20–200/mo for agent-managed memory. MemPalace does it with a wing.
-
----
-
-## MCP Server
-
-```bash
-# Via plugin (recommended)
-claude plugin marketplace add milla-jovovich/mempalace
-claude plugin install --scope user mempalace
-
-# Or manually
-claude mcp add mempalace -- python -m mempalace.mcp_server
-```
-
-### 19 Tools
-
-**Palace (read)**
-
-| Tool | What |
-|------|------|
-| `mempalace_status` | Palace overview + AAAK spec + memory protocol |
-| `mempalace_list_wings` | Wings with counts |
-| `mempalace_list_rooms` | Rooms within a wing |
-| `mempalace_get_taxonomy` | Full wing → room → count tree |
-| `mempalace_search` | Semantic search with wing/room filters |
-| `mempalace_check_duplicate` | Check before filing |
-| `mempalace_get_aaak_spec` | AAAK dialect reference |
-
-**Palace (write)**
-
-| Tool | What |
-|------|------|
-| `mempalace_add_drawer` | File verbatim content |
-| `mempalace_delete_drawer` | Remove by ID |
-
-**Knowledge Graph**
-
-| Tool | What |
-|------|------|
-| `mempalace_kg_query` | Entity relationships with time filtering |
-| `mempalace_kg_add` | Add facts |
-| `mempalace_kg_invalidate` | Mark facts as ended |
-| `mempalace_kg_timeline` | Chronological entity story |
-| `mempalace_kg_stats` | Graph overview |
-
-**Navigation**
-
-| Tool | What |
-|------|------|
-| `mempalace_traverse` | Walk the graph from a room across wings |
-| `mempalace_find_tunnels` | Find rooms bridging two wings |
-| `mempalace_graph_stats` | Graph connectivity overview |
-
-**Agent Diary**
-
-| Tool | What |
-|------|------|
-| `mempalace_diary_write` | Write AAAK diary entry |
-| `mempalace_diary_read` | Read recent diary entries |
-
-The AI learns AAAK and the memory protocol automatically from the `mempalace_status` response. No manual configuration.
-
----
-
-## Auto-Save Hooks
-
-Two hooks for Claude Code that automatically save memories during work:
-
-**Save Hook** — every 15 messages, triggers a structured save. Topics, decisions, quotes, code changes. Also regenerates the critical facts layer.
-
-**PreCompact Hook** — fires before context compression. Emergency save before the window shrinks.
-
-```json
-{
-  "hooks": {
-    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "/path/to/mempalace/hooks/mempal_save_hook.sh"}]}],
-    "PreCompact": [{"matcher": "", "hooks": [{"type": "command", "command": "/path/to/mempalace/hooks/mempal_precompact_hook.sh"}]}]
-  }
-}
-```
-
-**Optional auto-ingest:** Set the `MEMPAL_DIR` environment variable to a directory path and the hooks will automatically run `mempalace mine` on that directory during each save trigger (background on stop, synchronous on precompact).
-
----
-
-## Benchmarks
-
-Tested on standard academic benchmarks — reproducible, published datasets.
-
-| Benchmark | Mode | Score | API Calls |
-|-----------|------|-------|-----------|
-| **LongMemEval R@5** | Raw (ChromaDB only) | **96.6%** | Zero |
-| **LongMemEval R@5** | Hybrid + Haiku rerank | **100%** (500/500) | ~500 |
-| **LoCoMo R@10** | Raw, session level | **60.3%** | Zero |
-| **Personal palace R@10** | Heuristic bench | **85%** | Zero |
-| **Palace structure impact** | Wing+room filtering | **+34%** R@10 | Zero |
-
-The 96.6% raw score is the highest published LongMemEval result requiring no API key, no cloud, and no LLM at any stage.
-
-### vs Published Systems
-
-| System | LongMemEval R@5 | API Required | Cost |
-|--------|----------------|--------------|------|
-| **MemPalace (hybrid)** | **100%** | Optional | Free |
-| Supermemory ASMR | ~99% | Yes | — |
-| **MemPalace (raw)** | **96.6%** | **None** | **Free** |
-| Mastra | 94.87% | Yes (GPT) | API costs |
-| Mem0 | ~85% | Yes | $19–249/mo |
-| Zep | ~85% | Yes | $25/mo+ |
-
----
-
-## All Commands
-
-```bash
-# Setup
-mempalace init <dir>                              # guided onboarding + AAAK bootstrap
-
-# Mining
-mempalace mine <dir>                              # mine project files
-mempalace mine <dir> --mode convos                # mine conversation exports
-mempalace mine <dir> --mode convos --wing myapp   # tag with a wing name
-
-# Splitting
-mempalace split <dir>                             # split concatenated transcripts
-mempalace split <dir> --dry-run                   # preview
-
-# Search
-mempalace search "query"                          # search everything
-mempalace search "query" --wing myapp             # within a wing
-mempalace search "query" --room auth-migration    # within a room
-
-# Memory stack
-mempalace wake-up                                 # load L0 + L1 context
-mempalace wake-up --wing driftwood                # project-specific
-
-# Compression
-mempalace compress --wing myapp                   # AAAK compress
-
-# Status
-mempalace status                                  # palace overview
-```
-
-All commands accept `--palace <path>` to override the default location.
-
----
-
-## Configuration
-
-### Global (`~/.mempalace/config.json`)
-
-```json
-{
-  "palace_path": "/custom/path/to/palace",
-  "collection_name": "mempalace_drawers",
-  "people_map": {"Kai": "KAI", "Priya": "PRI"}
-}
-```
-
-### Wing config (`~/.mempalace/wing_config.json`)
-
-Generated by `mempalace init`. Maps your people and projects to wings:
-
-```json
-{
-  "default_wing": "wing_general",
-  "wings": {
-    "wing_kai": {"type": "person", "keywords": ["kai", "kai's"]},
-    "wing_driftwood": {"type": "project", "keywords": ["driftwood", "analytics", "saas"]}
-  }
-}
-```
-
-### Identity (`~/.mempalace/identity.txt`)
-
-Plain text. Becomes Layer 0 — loaded every session.
-
----
-
-## File Reference
-
-| File | What |
-|------|------|
-| `cli.py` | CLI entry point |
-| `config.py` | Configuration loading and defaults |
-| `normalize.py` | Converts 5 chat formats to standard transcript |
-| `mcp_server.py` | MCP server — 19 tools, AAAK auto-teach, memory protocol |
-| `miner.py` | Project file ingest |
-| `convo_miner.py` | Conversation ingest — chunks by exchange pair |
-| `searcher.py` | Semantic search via ChromaDB |
-| `layers.py` | 4-layer memory stack |
-| `dialect.py` | AAAK compression — 30x lossless |
-| `knowledge_graph.py` | Temporal entity-relationship graph (SQLite) |
-| `palace_graph.py` | Room-based navigation graph |
-| `onboarding.py` | Guided setup — generates AAAK bootstrap + wing config |
-| `entity_registry.py` | Entity code registry |
-| `entity_detector.py` | Auto-detect people and projects from content |
-| `split_mega_files.py` | Split concatenated transcripts into per-session files |
-| `hooks/mempal_save_hook.sh` | Auto-save every N messages |
-| `hooks/mempal_precompact_hook.sh` | Emergency save before compaction |
-
----
-
-## Project Structure
-
-```
-mempalace/
-├── README.md                  ← you are here
-├── mempalace/                 ← core package (README)
-│   ├── cli.py                 ← CLI entry point
-│   ├── mcp_server.py          ← MCP server (19 tools)
-│   ├── knowledge_graph.py     ← temporal entity graph
-│   ├── palace_graph.py        ← room navigation graph
-│   ├── dialect.py             ← AAAK compression
-│   ├── miner.py               ← project file ingest
-│   ├── convo_miner.py         ← conversation ingest
-│   ├── searcher.py            ← semantic search
-│   ├── onboarding.py          ← guided setup
-│   └── ...                    ← see mempalace/README.md
-├── benchmarks/                ← reproducible benchmark runners
-│   ├── README.md              ← reproduction guide
-│   ├── BENCHMARKS.md          ← full results + methodology
-│   ├── longmemeval_bench.py   ← LongMemEval runner
-│   ├── locomo_bench.py        ← LoCoMo runner
-│   └── membench_bench.py      ← MemBench runner
-├── hooks/                     ← Claude Code auto-save hooks
-│   ├── README.md              ← hook setup guide
-│   ├── mempal_save_hook.sh    ← save every N messages
-│   └── mempal_precompact_hook.sh ← emergency save
-├── examples/                  ← usage examples
-│   ├── basic_mining.py
-│   ├── convo_import.py
-│   └── mcp_setup.md
-├── tests/                     ← test suite (README)
-├── assets/                    ← logo + brand assets
-└── pyproject.toml             ← package config (v3.0.0)
-```
-
----
-
-## Requirements
-
-- Python 3.9+
-- `chromadb>=0.4.0`
-- `pyyaml>=6.0`
-
-No API key. No internet after install. Everything local.
+## 快速开始
 
 ```bash
 pip install mempalace
+
+# 初始化一个项目
+mempalace init ~/projects/myapp
+
+# 挖掘项目文件
+mempalace mine ~/projects/myapp
+
+# 挖掘聊天记录
+mempalace mine ~/chats/ --mode convos
+
+# 自动提取决策 / 里程碑 / 问题 / 情绪等信息
+mempalace mine ~/chats/ --mode convos --extract general
+
+# 搜索历史内容
+mempalace search "为什么当时改用 GraphQL"
+
+# 查看宫殿状态
+mempalace status
 ```
 
----
+MemPalace 主要有三种挖掘模式：
 
-## Contributing
+- `projects`：项目文件、代码、文档、笔记
+- `convos`：聊天记录、对话导出
+- `general`：按启发式提取决策、偏好、问题、里程碑、情绪
 
-PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and guidelines.
+## 中文优先的推荐用法
 
-## License
+如果你主要做中文写作、中文知识管理或中文项目开发，建议这样使用：
 
-MIT — see [LICENSE](LICENSE).
+### 小说 / 长篇创作
 
-<!-- Link Definitions -->
-[version-shield]: https://img.shields.io/badge/version-3.0.0-4dc9f6?style=flat-square&labelColor=0a0e14
-[release-link]: https://github.com/milla-jovovich/mempalace/releases
-[python-shield]: https://img.shields.io/badge/python-3.9+-7dd8f8?style=flat-square&labelColor=0a0e14&logo=python&logoColor=7dd8f8
-[python-link]: https://www.python.org/
-[license-shield]: https://img.shields.io/badge/license-MIT-b0e8ff?style=flat-square&labelColor=0a0e14
-[license-link]: https://github.com/milla-jovovich/mempalace/blob/main/LICENSE
-[discord-shield]: https://img.shields.io/badge/discord-join-5865F2?style=flat-square&labelColor=0a0e14&logo=discord&logoColor=5865F2
-[discord-link]: https://discord.com/invite/ycTQQCu6kn
+可以把以下目录或文件放到同一个项目下，然后直接 `mine`：
+
+- `设定`
+- `世界观`
+- `人物`
+- `剧情`
+- `大纲`
+- `正文`
+- `章节`
+- `记忆`
+
+这样做的好处是，后续你可以按主题检索：
+
+- 某个角色之前的设定
+- 某条伏笔第一次出现在哪里
+- 哪一章修改过世界观规则
+- 某次讨论里最终决定保留了哪种写法
+
+### 中英混合工程项目
+
+如果项目同时包含：
+
+- 中文会议记录
+- 英文代码注释
+- 中文研发决策
+- 英文技术文档
+
+这个 Fork 会比只针对英文优化的默认启发式更实用，因为它能更好地处理混合脚本内容。
+
+## 和 Long-Novel-GPT 这类项目怎么配合
+
+对长篇写作项目，建议把 MemPalace 当作 **长期检索记忆层**，而不是直接替换项目自己的压缩记忆文件。
+
+推荐分层：
+
+- **L0 / L1**：项目内现有的 `series_bible_short`、`story_memory`
+- **L2 / L3**：MemPalace 的长期检索与原文回溯
+
+这样可以同时保留：
+
+- 压缩后的 prompt 友好记忆
+- 原始资料的可追溯检索
+
+也就是说，最佳做法通常不是“二选一”，而是并存。
+
+## 如何实际使用
+
+### 1. 配合 Claude Code
+
+```bash
+claude plugin marketplace add milla-jovovich/mempalace
+claude plugin install --scope user mempalace
+```
+
+重启 Claude Code 后，MemPalace 的工具就可以被调用。
+
+### 2. 配合 MCP 客户端
+
+```bash
+claude mcp add mempalace -- python -m mempalace.mcp_server
+```
+
+然后你的 AI 就可以直接调用类似这样的工具：
+
+- `mempalace_status`
+- `mempalace_search`
+- `mempalace_list_wings`
+- `mempalace_list_rooms`
+- `mempalace_kg_query`
+- `mempalace_add_drawer`
+
+### 3. 配合本地模型
+
+如果你用的是本地 LLM，而它暂时不支持 MCP，可以这样做：
+
+```bash
+mempalace wake-up > context.txt
+```
+
+把 `context.txt` 放进系统提示词，作为模型的基础记忆层。
+
+或者：
+
+```bash
+mempalace search "auth decisions" > results.txt
+```
+
+把检索结果塞回 prompt，让本地模型基于真实历史内容回答。
+
+## 宫殿结构解释
+
+### Wing
+
+一个项目、一个人物、一个主题，对应一个 Wing。
+
+### Room
+
+Wing 内的具体主题，例如：
+
+- `auth-migration`
+- `worldbuilding`
+- `characters`
+- `plot`
+
+### Hall
+
+一种跨 Wing 的记忆类型，比如：
+
+- `hall_facts`
+- `hall_events`
+- `hall_discoveries`
+- `hall_preferences`
+- `hall_advice`
+
+### Closet
+
+指向原始内容的摘要层。
+
+### Drawer
+
+真实原文。真正的内容最终在这里。
+
+## AAAK 是什么
+
+AAAK 是 MemPalace 提供的一种压缩记忆方言，目标是在规模很大时，用更紧凑的方式表达重复出现的实体与关系。
+
+需要注意的是：
+
+- AAAK 不是默认存储格式
+- 默认高分检索结果来自 **raw verbatim mode**
+- AAAK 目前更适合作为压缩层，而不是替代原始存储
+
+如果你想看更完整、偏原作者口径的 AAAK 说明和 benchmark 细节，请直接看：
+
+- [English README](README.en.md)
+
+## 语言能力说明
+
+这个 Fork 的定位不是“中文专用版”，而是“中文优先优化版”。
+
+也就是说：
+
+- 中文能力加强了
+- 中英混合场景更稳了
+- 英文能力仍然保留
+
+目前做的是启发式和目录识别层的增强。如果你后续要把中文语义检索效果再往上推，建议继续搭配更适合中文的 embedding 方案。
+
+## 常用命令
+
+```bash
+# 初始化
+mempalace init <dir>
+
+# 挖掘项目
+mempalace mine <dir>
+
+# 挖掘聊天记录
+mempalace mine <dir> --mode convos
+
+# 搜索
+mempalace search "query"
+mempalace search "query" --wing myapp
+mempalace search "query" --room worldbuilding
+
+# 唤醒记忆层
+mempalace wake-up
+
+# 查看状态
+mempalace status
+```
+
+所有命令都支持：
+
+```bash
+--palace <path>
+```
+
+用于覆盖默认宫殿目录。
+
+## 文档说明
+
+当前文档组织建议如下：
+
+- 中文默认入口：[`README.md`](README.md)
+- 英文说明：[`README.en.md`](README.en.md)
+
+如果你更关心以下内容，建议直接跳英文版：
+
+- 完整 benchmark 描述
+- AAAK 细节与问题说明
+- 更完整的项目结构介绍
+- 上游原始文档风格
+
+## 许可证
+
+MIT，详见 [LICENSE](LICENSE)。
+
+## 致谢
+
+- 原项目与整体架构思路来自上游 MemPalace
+- 本 Fork 重点补的是中文工作流、中文创作目录、中文记忆提取与中文优先使用体验
+
