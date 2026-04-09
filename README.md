@@ -22,6 +22,24 @@ Other memory systems try to fix this by letting AI decide what's worth rememberi
 
 <br>
 
+> [!IMPORTANT]
+> **This repository is a Chinese-optimized fork of MemPalace.**
+>
+> It keeps the upstream architecture and raw-storage approach, while adding extra support for:
+>
+> - Chinese text and mixed Chinese-English workflows
+> - Chinese creative-writing and long-novel projects
+> - Better room detection for folders such as `小说` / `设定` / `人物` / `剧情` / `章节`
+> - Better heuristic extraction for Chinese decisions, preferences, milestones, problems, and emotional context
+>
+> This fork is **additive**, not a replacement-only rewrite:
+>
+> - English support is still kept
+> - Existing English heuristics are not removed
+> - The goal is better Chinese retrieval and authoring support without breaking the original English workflow
+>
+> If your main workload is Chinese writing, Chinese note archives, or Chinese-first local projects, this fork is the recommended starting point.
+
 [![][version-shield]][release-link]
 [![][python-shield]][python-link]
 [![][license-shield]][license-link]
@@ -105,6 +123,26 @@ mempalace status
 ```
 
 Three mining modes: **projects** (code and docs), **convos** (conversation exports), and **general** (auto-classifies into decisions, preferences, milestones, problems, and emotional context). Everything stays on your machine.
+
+### Fork Note: Chinese-First Usage
+
+This fork is especially suitable for:
+
+- Chinese chat archives
+- Chinese local knowledge bases
+- Chinese novel / worldbuilding / outline / manuscript folders
+- Mixed Chinese-English engineering notes
+
+Out of the box, the fork includes extra room and extractor heuristics for creative-writing structures such as:
+
+- `故事` / `小说`
+- `设定` / `世界观`
+- `人物` / `角色`
+- `剧情` / `大纲`
+- `正文` / `章节`
+- `记忆`
+
+If your workload is primarily Chinese, this fork should behave better than the upstream default before any further customization.
 
 ---
 
